@@ -15,11 +15,11 @@ PIGEON_BODY_PX = 20
 DRAW_W = PIGEON_BODY_PX * FRAME_W / BODY_W_IN_FRAME  # 약 25px
 DRAW_H = DRAW_W * FRAME_H / FRAME_W                  # 약 23px
 
-# Bird Fly Speed : 비둘기 평균 비행 속도 약 60km/h
-FLY_SPEED_KMPH = 60.0  # Km / Hour
+# Bird Fly Speed : 근처를 느긋하게 나는 비둘기 속도 약 35km/h
+FLY_SPEED_KMPH = 35.0  # Km / Hour
 FLY_SPEED_MPM = (FLY_SPEED_KMPH * 1000.0 / 60.0)
 FLY_SPEED_MPS = (FLY_SPEED_MPM / 60.0)
-FLY_SPEED_PPS = (FLY_SPEED_MPS * PIXEL_PER_METER)  # 약 556 px/s
+FLY_SPEED_PPS = (FLY_SPEED_MPS * PIXEL_PER_METER)  # 약 324 px/s
 
 
 class Bird:
