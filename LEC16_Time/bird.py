@@ -3,8 +3,10 @@ from pico2d import *
 import game_framework
 from boy import PIXEL_PER_METER
 
-# bird_animation.png : 5열 x 3행, 한 프레임 약 183 x 168 픽셀
+# bird_animation.png : 918 x 506, 5열 x 3행 (마지막 행은 4개) = 총 14프레임
+FRAME_COLS, FRAME_ROWS, FRAME_COUNT = 5, 3, 14
 FRAME_W, FRAME_H = 183, 168
+CELL_W, CELL_H = 918 / FRAME_COLS, 506 / FRAME_ROWS  # 칸 간격 (183.6 x 168.7)
 # 프레임 안에서 새 몸통(꼬리~부리)이 차지하는 폭(픽셀)
 BODY_W_IN_FRAME = 145
 
@@ -21,14 +23,21 @@ FLY_SPEED_MPM = (FLY_SPEED_KMPH * 1000.0 / 60.0)
 FLY_SPEED_MPS = (FLY_SPEED_MPM / 60.0)
 FLY_SPEED_PPS = (FLY_SPEED_MPS * PIXEL_PER_METER)  # 약 324 px/s
 
+FLAP_LENGTH_M = 2.0  # 날개 1회 펄럭일 때 날아가는 거리
+FLY_FRAMES_PER_FLAP = FRAME_COUNT  # 날갯짓 1회 = 14프레임
+# 1초당 프레임 증가량 = 9.72 / 2 * 14 ≈ 68
+FLY_FRAMES_PER_SECOND = FLY_SPEED_MPS / FLAP_LENGTH_M * FLY_FRAMES_PER_FLAP
+
 
 class Bird:
     def __init__(self, x=800, y=540):
         self.x, self.y = x, y
         self.dir = 1  # 1: 오른쪽, -1: 왼쪽
+        self.frame = 0
         self.image = load_image('bird_animation.png')
 
     def update(self):
+        self.frame = (self.frame + FLY_FRAMES_PER_SECOND * game_framework.frame_time) % FRAME_COUNT
         self.x += self.dir * FLY_SPEED_PPS * game_framework.frame_time
 
         # 화면 끝에 닿으면 방향 전환
@@ -41,8 +50,11 @@ class Bird:
             self.dir = 1
 
     def draw(self):
-        # 첫 번째 프레임(좌상단)만 고정해서 출력, 왼쪽으로 갈 때는 좌우 반전
-        left, bottom = 0, self.image.h - FRAME_H
+        # 시트는 좌상단부터 행 순서로 진행, 왼쪽으로 갈 때는 좌우 반전
+        i = int(self.frame)
+        col, row = i % FRAME_COLS, i // FRAME_COLS
+        left = int(col * CELL_W)
+        bottom = int(self.image.h - (row + 1) * CELL_H)
         if self.dir == 1:
             self.image.clip_draw(left, bottom, FRAME_W, FRAME_H,
                                  self.x, self.y, DRAW_W, DRAW_H)
