@@ -1,3 +1,5 @@
+import random
+
 from pico2d import *
 
 import game_framework
@@ -29,18 +31,32 @@ FLY_FRAMES_PER_FLAP = FRAME_COUNT  # 날갯짓 1회 = 14프레임
 FLY_FRAMES_PER_SECOND = FLY_SPEED_MPS / FLAP_LENGTH_M * FLY_FRAMES_PER_FLAP
 
 
+# 새가 날아다니는 하늘 높이 범위 (y 좌표)
+SKY_Y_MIN, SKY_Y_MAX = 300, 570
+# 위아래로 천천히 오르내리는 속도 범위 : 최대 1m/s
+VERT_SPEED_MAX_PPS = 1.0 * PIXEL_PER_METER  # 약 33 px/s
+
+
 class Bird:
-    def __init__(self, x=800, y=540):
-        self.x, self.y = x, y
-        self.dir = 1  # 1: 오른쪽, -1: 왼쪽
-        self.frame = 0
-        self.image = load_image('bird_animation.png')
+    image = None  # 10마리가 이미지를 공유하도록 한 번만 로드
+
+    def __init__(self):
+        if Bird.image is None:
+            Bird.image = load_image('bird_animation.png')
+        half_w = DRAW_W / 2
+        self.x = random.uniform(half_w, get_canvas_width() - half_w)
+        self.y = random.uniform(SKY_Y_MIN, SKY_Y_MAX)
+        self.dir = random.choice([-1, 1])  # 1: 오른쪽, -1: 왼쪽
+        self.dy = random.uniform(-VERT_SPEED_MAX_PPS, VERT_SPEED_MAX_PPS)
+        self.frame = random.uniform(0, FRAME_COUNT)  # 날갯짓 타이밍이 서로 다르게
 
     def update(self):
-        self.frame = (self.frame + FLY_FRAMES_PER_SECOND * game_framework.frame_time) % FRAME_COUNT
-        self.x += self.dir * FLY_SPEED_PPS * game_framework.frame_time
+        dt = game_framework.frame_time
+        self.frame = (self.frame + FLY_FRAMES_PER_SECOND * dt) % FRAME_COUNT
+        self.x += self.dir * FLY_SPEED_PPS * dt
+        self.y += self.dy * dt
 
-        # 화면 끝에 닿으면 방향 전환
+        # 화면 좌우 끝에 닿으면 방향 전환
         half_w = DRAW_W / 2
         if self.x > get_canvas_width() - half_w:
             self.x = get_canvas_width() - half_w
@@ -48,6 +64,14 @@ class Bird:
         elif self.x < half_w:
             self.x = half_w
             self.dir = 1
+
+        # 하늘 범위의 위아래 끝에 닿으면 반대로
+        if self.y > SKY_Y_MAX:
+            self.y = SKY_Y_MAX
+            self.dy = -abs(self.dy)
+        elif self.y < SKY_Y_MIN:
+            self.y = SKY_Y_MIN
+            self.dy = abs(self.dy)
 
     def draw(self):
         # 시트는 좌상단부터 행 순서로 진행, 왼쪽으로 갈 때는 좌우 반전
